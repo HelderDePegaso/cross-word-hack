@@ -1,2 +1,2 @@
 # cross-word-hack
-Algorithms to bit cross-word-hack
+Algorithms to hack cross-word games
