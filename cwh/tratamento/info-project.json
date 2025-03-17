@@ -1,0 +1,15 @@
+{
+  "Nome": "cwh-p-None",
+  "database": "db-None",
+  "fonteInicial": "path",
+  "language": "pt",
+  "operacoes": [
+    {
+      "tipo": "new",
+      "source": "path",
+      "totalWord": 10000000,
+      "finalPath": ""
+    }
+  ]
+}
+

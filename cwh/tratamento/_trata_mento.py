@@ -15,7 +15,7 @@ import pandas as pd
 
 
 listOfWords = []
-
+totalOfWords = 0
 
 df: pd.DataFrame = None
 
@@ -43,8 +43,11 @@ def loadDF(caminho: str):
     #    return pd.read_excel(caminho, engine="openpyxl")  # Ler o arquivo existente
     #else:
     
-    return pd.DataFrame(listOfWords, columns=["N", "Word", "freq_num", "freq_per", "total_analizide", "font_analizided"])  # Criar um DataFrame vazio
-    
+    pDF = pd.DataFrame(listOfWords, columns=["N", "Word", "freq_num", "freq_per", "total_analizide", "font_analizided"])  # Criar um DataFrame vazio
+
+    pDF.set_index("N", inplace=True)
+
+    return pDF
     
 
 
@@ -52,31 +55,32 @@ def readWordFiles(arquivo:str):
     print(arquivo)
     print("Lendo arquivo {arquivo}")
     with open(file=arquivo, mode= "r", encoding = "utf-8") as palavras :
-        
-    
 
-
-        print("Colhendo as palavras no arquivo")
+        print("Colhendo as palavras no arquivo ......")
         for linha in palavras:
             palavra = linha.strip()
             listOfWords.append(palavra)
             
         print("Finalzando a colheita")
+    
+    global totalOfWords
+    totalOfWords = len(listOfWords)
 
-    return len(listOfWords) 
+    return totalOfWords 
 
 
 def fillDataFrame():
+    print("Preenchendo o DataFrame")
     try:
         for i, word in enumerate(listOfWords):
-            df.loc[i, "N"] = i
-            df.loc[i, "Word"] = word 
             i += 1
-            print(i)
-                    
-            if i > 100 :
-                break
-
+            
+            df.loc[i, "Word"] = word 
+            
+            completed = round(( ((i * 100 ) / totalOfWords)) * 100, 2)       
+            print("Completo ", completed , "%")
+            if i > 1000:
+                break       
         df.head(5)
         return True 
     except Exception as e:
@@ -154,6 +158,17 @@ def processArgs(args):
         startAdd(add_data, project_path)
 
 def main():
+    """
+    Main function to process project arguments from the command line.
+
+    This function sets up an argument parser to handle project-related operations
+    such as creating a new project or adding data to an existing project. It
+    defines and parses command-line arguments including source data path,
+    project name, language, and database name. The function also performs
+    validation to ensure mutually exclusive argument usage and initiates the
+    appropriate project processing based on the provided arguments.
+    """
+
     parser = argparse.ArgumentParser(description="Processamento de Projetos")
 
     parser.add_argument("--source", type=str, required=True, help="Caminho dos dados para criar um novo projeto")
