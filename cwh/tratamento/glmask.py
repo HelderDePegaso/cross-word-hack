@@ -34,7 +34,7 @@ def prioritizeCombinations(arr):
 async def generate(mask, lang, path=None):
     if path is None:
         # It suposes the code to be running in the main directory
-        path = "masks/linguistic-masks"
+        path = "masks/linguistic-masks/{lang}".format(lang=lang)
 
     prioritized = {
         "high_priority": [],
@@ -79,6 +79,9 @@ async def generate(mask, lang, path=None):
     await saveAsFile(archive, json.dumps(prioritized, ensure_ascii=False, indent=4), folder)
     
     await saveAsFile(statFile, json.dumps(stats, ensure_ascii=False, indent=4), folder)
+
+    # Inform to the general lang-lpm-stats.json that the file has been created successfully with the identification {glowed}
+    updateGeneralStats(path, lang, glowed)
     
     
 
@@ -88,6 +91,21 @@ async def saveAsFile(archive, content, dirName):
     async with aiofiles.open(archive, "w", encoding="utf-8") as f:
         print("Passou até aqui")
         await f.write(content)
+        print("File ", f"{archive} created successfully!")
+
+
+def updateGeneralStats(path:str, lang:str, glowed:str):
+    generalStats = os.path.join(path, f"{lang}-lpm-stats.json")
+    with open(generalStats, "r") as f:
+        data = json.load(f)
+        data[ lang + "-lpm"]["total"] += 1
+        data[ lang + "-lpm"]["list"].append(glowed)
+        
+        with open(generalStats, "w") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+        print(f"{lang}-lpm-stats.json updated successfully")
+
 
 def main():
     global openedMasks
