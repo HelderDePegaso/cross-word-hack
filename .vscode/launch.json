@@ -11,9 +11,9 @@
             "program": "${workspaceFolder}/index.py",
             "console": "integratedTerminal",
             "args": [
-                "--charsToUse", "mate",
+                "--charsToUse", "matoe",
                 "--lang", "pt",
-                "--charPattern", "_.",
+                "--charPattern", "te**",
                 "--rbf", "1"
             ]
         }
