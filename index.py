@@ -1,3 +1,4 @@
+import random
 import argparse 
 import unicodedata
 from ImportMaskArchive import ImportMaskArchive
@@ -30,28 +31,29 @@ def withPatternSearch(cu:str, cp:str):
     if acceptableCharPattern(cp):
         charPos = getCharPos(cp)
         
-        initialChar = findInitialChar(cp)
-        finalChar = findFinalChar(cp)
-        initialMask = None
-        finalMask = None
+        cuArray = arrayFromString(cu)
 
-        if initialChar != "":
-            initialMask = initialMaskValue(len(initialChar))
+        orderCu = distributeCuByPattern(cuArray, cp, charPos)
         
-        if finalChar != "" :
-            finalMask = finalMaskValue(len(finalChar), len(cp)) 
+        _return = {"high_priority" : ListAsSet(), "medium_priority" : ListAsSet(), "low_priority" : ListAsSet()}
 
         
-        if initialMask and  not finalMask:
-            selected =  withInitialOrFinalMaskValueSearch(cpLength = len(cp), initialMaskValue = initialMask, charsToUseLength = len(cu))
+        results = patternSearchAnalises(len(cp), len(cu), charPos)
 
-            print("selected: ", selected)
-            
-        elif not initialMask and finalMask:
-            withInitialOrFinalMaskValueSearch(cpLength = len(cp), finalMaskValue = finalMask)
+        print(results)
 
-        elif initialMask and finalMask:
-            withInitialOrFinalMaskValueSearch(cpLength = len(cp), initialMaskValue = initialMask, finalMaskValue = finalMask)
+        fillInMaskWithPattern(results["high_priority"], orderCu, charPos, _return["high_priority"])
+        fillInMaskWithPattern(results["medium_priority"], orderCu, charPos, _return["medium_priority"])
+        fillInMaskWithPattern(results["low_priority"], orderCu, charPos, _return["low_priority"])
+
+
+        print(_return)
+
+        return _return
+        
+        
+        
+        
 
 def withInitialOrFinalMaskValueSearch( cpLength: int ,   initialMaskValue: str = None, finalMaskValue: str = None, charsToUseLength: int = None):
     
@@ -82,6 +84,32 @@ def withInitialOrFinalMaskValueSearch( cpLength: int ,   initialMaskValue: str =
 
 
 
+def distributeCuByPattern(cuArray: list, cp: str, charPos: dict) -> list:
+    result = [''] * len(cp)
+    used_chars = set()
+
+    # Posiciona os caracteres fixos
+    for i, char in zip(charPos["pos"], charPos["value"]):
+        result[i] = char
+        used_chars.add(char)
+    
+    # Separa os restantes caracteres de cu
+    remaining = [c for c in cuArray if c not in used_chars]
+    random.shuffle(remaining)
+
+    # Preenche os '*'
+    for i, c in enumerate(cp):
+        if c == "*" and remaining:
+            result[i] = remaining.pop(0)
+
+    # Adiciona o restante ao final
+    result.extend(remaining)
+
+    return result
+
+
+
+
 def filtratedByStartOrEndMaskValue(initialMaskValue: str, finalMaskValue: str, mask: dict, filtrated: dict ):
     
 
@@ -100,7 +128,41 @@ def filtratedByStartOrEndMaskValue(initialMaskValue: str, finalMaskValue: str, m
     return filtrated
 
 
+def patternSearchAnalises(cpLength: int,  charsToUseLength: int, charsPos: dict):
+    print("charpos again ", charsPos)
+    
+    # Initiate Filtrated
+    filtrated = {"high_priority": ListAsSet(), "medium_priority": ListAsSet(), "low_priority": ListAsSet()}
 
+    # maskSetList is a list of dictinary, each dictionary is mask dictionary organized by the priority of the set lpm
+    maskSetList = list(ImportMaskArchive.importByLength(charLength=cpLength, language=globalLanguage, lastElement=charsToUseLength))
+    
+    # Each mask is masks dict in the maskSetList
+    for mask in maskSetList:
+        for priority in mask:
+            for m in mask[priority]:
+                marray = arrayFromString(m)
+                maccepted = False
+                for pos in charsPos["pos"]:
+                    maccepted = maccepted
+                    #print(pos)
+                    #print(marray[pos])
+                    
+                    if pos == int(marray[pos]):
+                       
+                       maccepted = True
+                       
+
+                    else:
+                        maccepted = False
+                        break
+                
+                #print("maccepted ", maccepted)
+                #print("marray ", marray)
+                if maccepted: 
+                    filtrated[priority].append(m)
+
+        return filtrated;
 
     
 
@@ -128,6 +190,35 @@ def fillInMask(maskPriorityPart:list, cuArray:list, returnPriorityPart:list):
             unmasked = arrayToString(toUnmask)
             returnPriorityPart.append(unmasked)
 
+def fillInMaskWithPattern(maskPriorityPart:list, orderedCuArray:list, charPos,  returnPriorityPart:list):
+    print("The cuArray : ", orderedCuArray)
+    for mask in maskPriorityPart:
+        toUnmask = []
+        
+        maskAsArray = arrayFromString(mask)
+        for i in range(len(maskAsArray)):
+            point = int(maskAsArray[i]) 
+            
+            # To prevent index out of range
+            if point > len(orderedCuArray) - 1:
+                continue
+
+            char = ""
+
+            # Filling
+            if point in charPos["pos"] :
+                indice = charPos["pos"].index(point)
+                char = charPos["value"][indice]
+            else:
+                char = orderedCuArray[point]
+
+            toUnmask.append(char)
+
+          
+
+        if len(toUnmask) > 0 and len(toUnmask) == len(maskAsArray):
+            unmasked = arrayToString(toUnmask)
+            returnPriorityPart.append(unmasked)
 
 
 def getCharPos(charPattern: str) -> dict:
